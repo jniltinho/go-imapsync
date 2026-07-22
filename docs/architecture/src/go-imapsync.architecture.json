@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "go-imapsync System Architecture",
+    "subtitle": "One-way host1 → host2 IMAP mailbox sync (MVP)",
+    "output": "go-imapsync-architecture.html"
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 6,
+    "origin": [40, 100],
+    "gapX": 28,
+    "gapY": 52,
+    "cellW": 128,
+    "cellH": 64
+  },
+  "components": [
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "Operator",
+      "sublabel": "CLI / scripts",
+      "row": 1,
+      "col": 0,
+      "tag": "flags + env"
+    },
+    {
+      "id": "cli",
+      "type": "frontend",
+      "label": "Cobra CLI",
+      "sublabel": "cmd/",
+      "row": 1,
+      "col": 1,
+      "tag": "exit 0/1/2"
+    },
+    {
+      "id": "config",
+      "type": "backend",
+      "label": "Config",
+      "sublabel": "internal/config",
+      "row": 0,
+      "col": 2,
+      "tag": "validate"
+    },
+    {
+      "id": "secret",
+      "type": "security",
+      "label": "Secrets",
+      "sublabel": "internal/secret",
+      "row": 2,
+      "col": 2,
+      "tag": "redacted"
+    },
+    {
+      "id": "sync",
+      "type": "backend",
+      "label": "Sync Engine",
+      "sublabel": "internal/sync",
+      "row": 1,
+      "col": 2,
+      "tag": "orchestrator"
+    },
+    {
+      "id": "identity",
+      "type": "backend",
+      "label": "Identity",
+      "sublabel": "Message-Id+Received",
+      "row": 0,
+      "col": 3,
+      "tag": "dedup keys"
+    },
+    {
+      "id": "imapcli",
+      "type": "backend",
+      "label": "IMAP Client",
+      "sublabel": "go-imap/v2",
+      "row": 1,
+      "col": 3,
+      "tag": "dual session"
+    },
+    {
+      "id": "report",
+      "type": "messagebus",
+      "label": "Report",
+      "sublabel": "slog + summary",
+      "row": 2,
+      "col": 3,
+      "tag": "counters"
+    },
+    {
+      "id": "host1",
+      "type": "cloud",
+      "label": "IMAP Host1",
+      "sublabel": "source SSL/TLS",
+      "row": 0,
+      "col": 5,
+      "tag": "LIST/FETCH"
+    },
+    {
+      "id": "host2",
+      "type": "cloud",
+      "label": "IMAP Host2",
+      "sublabel": "destination",
+      "row": 2,
+      "col": 5,
+      "tag": "CREATE/APPEND"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "go-imapsync binary (static, CGO_ENABLED=0)",
+      "wraps": ["cli", "config", "secret", "sync", "identity", "imapcli", "report"]
+    },
+    {
+      "kind": "security-group",
+      "label": "credential boundary (never logged)",
+      "wraps": ["secret", "config"]
+    }
+  ],
+  "connections": [
+    { "from": "operator", "to": "cli", "label": "flags", "variant": "emphasis" },
+    { "from": "cli", "to": "sync", "label": "Run", "variant": "emphasis" },
+    { "from": "cli", "to": "config", "fromSide": "top", "toSide": "left" },
+    { "from": "cli", "to": "secret", "fromSide": "bottom", "toSide": "left", "variant": "security" },
+    { "from": "sync", "to": "identity", "fromSide": "top", "toSide": "left" },
+    { "from": "sync", "to": "imapcli", "variant": "emphasis" },
+    { "from": "sync", "to": "report", "fromSide": "bottom", "toSide": "left", "variant": "dashed" },
+    {
+      "from": "imapcli",
+      "to": "host1",
+      "label": "IMAP",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "from": "imapcli",
+      "to": "host2",
+      "label": "IMAP",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "left"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "References",
+      "items": [
+        "Behavior: classic Perl imapsync (one-way, restartable)",
+        "Go patterns: jniltinho/go-getmail (Cobra, secret.String, go-imap/v2)",
+        "No config file — CLI flags and optional env passwords"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Core packages",
+      "items": [
+        "cmd: flags, exit codes, signal handling",
+        "sync: folder loop + message transfer",
+        "identity: header-based keys (not IMAP UID)"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security",
+      "items": [
+        "Passwords redacted in String/LogValue/JSON",
+        "TLS verify on by default; --insecuretls lab only",
+        "Live credentials never committed to git"
+      ]
+    }
+  ]
+}

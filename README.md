@@ -90,6 +90,19 @@ make live-dry
 
 Default `make test` never contacts external IMAP hosts.
 
+## Architecture
+
+Interactive diagrams (HTML, dark/light theme, PNG/SVG export):
+
+| Diagram | Path |
+|---------|------|
+| System architecture | [docs/architecture/go-imapsync-architecture.html](docs/architecture/go-imapsync-architecture.html) |
+| Sync run workflow | [docs/architecture/sync-run-workflow.html](docs/architecture/sync-run-workflow.html) |
+| Message transfer sequence | [docs/architecture/message-transfer-sequence.html](docs/architecture/message-transfer-sequence.html) |
+| Message data path | [docs/architecture/message-path-dataflow.html](docs/architecture/message-path-dataflow.html) |
+
+See [docs/architecture/README.md](docs/architecture/README.md) for sources and re-render instructions.
+
 ## Project layout
 
 ```text
@@ -101,6 +114,7 @@ internal/identity/   # Message-Id + Received keys
 internal/sync/       # folder + message orchestration
 internal/report/     # end-of-run summary
 deploy/docker/       # Dockerfile
+docs/architecture/   # Archify HTML diagrams + JSON sources
 examples/            # sample invocations
 openspec/            # OpenSpec design (go-imapsync-core)
 ```

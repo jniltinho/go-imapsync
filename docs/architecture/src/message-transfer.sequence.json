@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Per-Folder Message Transfer Sequence",
+    "subtitle": "Identity set on host2, fetch missing from host1, APPEND to host2",
+    "output": "message-transfer-sequence.html",
+    "viewBox": [920, 820]
+  },
+  "participants": [
+    { "id": "engine", "type": "backend", "label": "Sync Engine", "sublabel": "internal/sync" },
+    { "id": "id", "type": "backend", "label": "Identity", "sublabel": "headers" },
+    { "id": "src", "type": "cloud", "label": "Host1", "sublabel": "source IMAP" },
+    { "id": "dst", "type": "cloud", "label": "Host2", "sublabel": "dest IMAP" },
+    { "id": "rep", "type": "messagebus", "label": "Report", "sublabel": "counters" }
+  ],
+  "segments": [
+    { "from": 150, "to": 310, "label": "01 / Select + identity" },
+    { "from": 330, "to": 520, "label": "02 / Decide" },
+    { "from": 540, "to": 720, "label": "03 / Transfer or skip" }
+  ],
+  "messages": [
+    { "from": "engine", "to": "src", "y": 185, "label": "SELECT folder (RO)", "variant": "emphasis" },
+    { "from": "src", "to": "engine", "y": 218, "label": "exists OK", "variant": "return" },
+    { "from": "engine", "to": "dst", "y": 252, "label": "SELECT / CREATE", "variant": "default" },
+    { "from": "dst", "to": "engine", "y": 286, "label": "ready", "variant": "return" },
+    { "from": "engine", "to": "src", "y": 335, "label": "FETCH headers+UID", "variant": "emphasis" },
+    { "from": "src", "to": "engine", "y": 368, "label": "meta list", "variant": "return" },
+    { "from": "engine", "to": "dst", "y": 402, "label": "FETCH headers", "variant": "default" },
+    { "from": "dst", "to": "engine", "y": 436, "label": "dst meta", "variant": "return" },
+    { "from": "engine", "to": "id", "y": 485, "label": "KeyFromHeaders", "variant": "security" },
+    { "from": "id", "to": "engine", "y": 518, "label": "key set", "variant": "return" },
+    { "from": "engine", "to": "src", "y": 565, "label": "FETCH full body", "variant": "emphasis" },
+    { "from": "src", "to": "engine", "y": 598, "label": "RFC822 + flags", "variant": "return" },
+    { "from": "engine", "to": "dst", "y": 640, "label": "APPEND flags+date", "variant": "emphasis" },
+    { "from": "dst", "to": "engine", "y": 674, "label": "OK", "variant": "return" },
+    { "from": "engine", "to": "rep", "y": 710, "label": "transferred++", "variant": "dashed" }
+  ],
+  "activations": [
+    { "participant": "engine", "from": 180, "to": 715, "type": "backend" },
+    { "participant": "src", "from": 180, "to": 610, "type": "cloud" },
+    { "participant": "dst", "from": 245, "to": 680, "type": "cloud" },
+    { "participant": "id", "from": 480, "to": 525, "type": "security" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Duplicate skip",
+      "items": [
+        "If key already on host2, skip FETCH full + APPEND",
+        "Default headers: Message-Id + Received",
+        "Override with --useheader"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Dry-run",
+      "items": [
+        "--dry logs would-transfer without APPEND",
+        "Counts planned transfers for planning"
+      ]
+    }
+  ]
+}

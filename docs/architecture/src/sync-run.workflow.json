@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Sync Run Workflow",
+    "subtitle": "Operator invocation → dual IMAP → folders → messages → summary",
+    "output": "sync-run-workflow.html"
+  },
+  "lanes": [
+    { "id": "operator", "label": "Operator" },
+    { "id": "cli", "label": "CLI / Config" },
+    { "id": "engine", "label": "Sync Engine" },
+    { "id": "imap", "label": "IMAP Sessions" },
+    { "id": "exceptions", "label": "Errors", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "start", "label": "Start", "fromCol": 0, "toCol": 1 },
+    { "id": "folders", "label": "Folders", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "messages", "label": "Messages + report", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["invoke", "validate", "dial", "list", "create", "xfer", "summary"],
+  "nodes": [
+    {
+      "id": "invoke",
+      "lane": "operator",
+      "col": 0,
+      "type": "external",
+      "label": "Invoke",
+      "sublabel": "flags / env"
+    },
+    {
+      "id": "validate",
+      "lane": "cli",
+      "col": 1,
+      "type": "security",
+      "label": "Validate",
+      "sublabel": "required sides"
+    },
+    {
+      "id": "dial",
+      "lane": "imap",
+      "col": 1,
+      "type": "cloud",
+      "label": "Dial+Auth",
+      "sublabel": "host1 + host2"
+    },
+    {
+      "id": "list",
+      "lane": "engine",
+      "col": 2,
+      "type": "backend",
+      "label": "LIST folders",
+      "sublabel": "source hierarchy"
+    },
+    {
+      "id": "create",
+      "lane": "engine",
+      "col": 3,
+      "type": "backend",
+      "label": "CREATE dst",
+      "sublabel": "unless --dry"
+    },
+    {
+      "id": "xfer",
+      "lane": "engine",
+      "col": 5,
+      "type": "backend",
+      "label": "Transfer msgs",
+      "sublabel": "skip duplicates",
+      "tag": "identity keys"
+    },
+    {
+      "id": "summary",
+      "lane": "cli",
+      "col": 5,
+      "type": "messagebus",
+      "label": "Summary",
+      "sublabel": "counts + exit"
+    },
+    {
+      "id": "authfail",
+      "lane": "exceptions",
+      "col": 1,
+      "type": "security",
+      "label": "Auth fail",
+      "sublabel": "exit 1"
+    },
+    {
+      "id": "usage",
+      "lane": "exceptions",
+      "col": 0,
+      "type": "security",
+      "label": "Bad flags",
+      "sublabel": "exit 2"
+    },
+    {
+      "id": "msgfail",
+      "lane": "exceptions",
+      "col": 5,
+      "type": "security",
+      "label": "Msg errors",
+      "sublabel": "count + continue"
+    }
+  ],
+  "edges": [
+    { "from": "invoke", "to": "validate", "variant": "emphasis" },
+    {
+      "from": "validate",
+      "to": "dial",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "drop"
+    },
+    {
+      "from": "validate",
+      "to": "usage",
+      "label": "missing",
+      "variant": "security",
+      "role": "error",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "drop"
+    },
+    {
+      "from": "dial",
+      "to": "authfail",
+      "label": "reject",
+      "variant": "security",
+      "role": "error",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "drop"
+    },
+    {
+      "from": "dial",
+      "to": "list",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "drop"
+    },
+    { "from": "list", "to": "create", "variant": "default" },
+    { "from": "create", "to": "xfer", "variant": "emphasis" },
+    {
+      "from": "xfer",
+      "to": "msgfail",
+      "label": "append fail",
+      "variant": "dashed",
+      "role": "branch",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "drop"
+    },
+    {
+      "from": "xfer",
+      "to": "summary",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "drop"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Safe modes",
+      "items": [
+        "--dry: report only (no CREATE/APPEND)",
+        "--justfolders: folders only",
+        "Re-run is safe: header identity skips duplicates"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Exit codes",
+      "items": [
+        "0 success",
+        "1 runtime / auth / message failures",
+        "2 usage / validation"
+      ]
+    }
+  ]
+}
