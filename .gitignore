@@ -18,6 +18,10 @@ base/
 *.log
 LOG_go-imapsync/
 
+# Local webmail screenshots (may contain private mailbox UI — never commit)
+/docs/prints/
+docs/prints/
+
 # Editor/OS noise
 .idea/
 .vscode/
