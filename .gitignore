@@ -1,0 +1,30 @@
+# Build output
+/dist/
+/go-imapsync
+
+# Reference clones (not part of this repo)
+/base/
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Vagrant
+.vagrant/
+
+# Logs
+*.log
+LOG_go-imapsync/
+
+# Editor/OS noise
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local agent skill trees (optional tooling)
+.agents/
+.agents
+.claude/
+.claude

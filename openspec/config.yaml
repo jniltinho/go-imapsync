@@ -1,0 +1,58 @@
+schema: spec-driven
+
+context: |
+  Project: go-imapsync — a Go reimplementation of the classic Perl imapsync
+  (behavior reference: base/imapsync, version 2.229 by Gilles LAMIRAL).
+
+  Go implementation base: https://github.com/jniltinho/go-getmail
+  (local checkout: base/go-getmail). Reuse patterns and, where clean, adapt
+  code from go-getmail — not POP3/Maildir/oldmail, but:
+  - cobra CLI + exit codes + slog
+  - emersion/go-imap/v2 IMAP dial/login/SELECT/FETCH (internal/retriever/imap.go)
+  - secret.String redaction (internal/secret)
+  - Makefile (CGO_ENABLED=0, ldflags version, test -race, lint)
+  - MIT license, from-scratch reimplementation style
+
+  Important difference: go-getmail dedups by UIDVALIDITY:UID for local
+  Maildir delivery; go-imapsync MUST dedup by message headers (Message-Id +
+  Received) across two IMAP servers like Perl imapsync. go-getmail has no
+  APPEND/CREATE multi-folder sync — that is new work.
+
+  Goal: one-way, incremental, duplicate-safe IMAP mailbox sync between two
+  IMAP servers (rsync-like for email). Stateless, no config file required
+  (flags only — unlike go-getmail's config.toml), safe defaults.
+
+  Tech stack (align with go-getmail where practical):
+  - Go (match go-getmail: 1.25+ or latest stable), modules
+  - CLI: spf13/cobra + pflag
+  - IMAP: emersion/go-imap/v2 + go-message + go-sasl
+  - slog; unit + integration tests
+  - Test environments: Docker and/or Vagrant Ubuntu 24.04
+  - Live IMAP: mail.linuxpro.com.br (credentials at test time only)
+
+  References under base/:
+  - base/imapsync/ — Perl behavior, FAQ, flags, examples
+  - base/go-getmail/ — Go IMAP/TLS/CLI/secrets patterns (read-only reference)
+
+  Design principles (imapsync FAQ.Principles):
+  - No configuration file; CLI flags only
+  - Stateless
+  - Rsync in mind (incremental, restartable)
+  - Reliable and robust under flaky connections
+  - Safe defaults / no harm by default
+
+rules:
+  proposal:
+    - Include Non-goals
+    - Scope an MVP core plus clear later phases (parity is multi-release)
+    - Mention go-getmail as Go base and imapsync as behavior reference
+    - Mention test plan: unit, Docker/Vagrant, live mail.linuxpro.com.br
+  design:
+    - Package layout under cmd/ and internal/ (mirror go-getmail style)
+    - Explicitly map which go-getmail packages to adapt vs rewrite
+    - Call out IMAP library choice and reconnect strategy
+    - Message identity = Message-Id + Received (configurable) like imapsync, NOT UID like go-getmail
+  tasks:
+    - Phased, checkable tasks; keep secrets out of repo
+    - Early tasks: study base/go-getmail and port secret + IMAP connect patterns
+    - Include Docker and/or Vagrant harness early enough for integration tests
