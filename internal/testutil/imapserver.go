@@ -1,4 +1,7 @@
 // Package testutil provides shared IMAP test helpers (in-memory TLS server).
+//
+// StartDualUserIMAP boots a dual-user IMAPS endpoint for unit/integration tests
+// without contacting the network. Not for production use.
 package testutil
 
 import (

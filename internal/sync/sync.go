@@ -1,4 +1,13 @@
 // Package sync orchestrates one-way folder and message transfer host1 → host2.
+//
+// The algorithm is stateless: each run rebuilds identity key sets from IMAP
+// header FETCHes, creates missing folders on host2, then APPENDs messages
+// whose keys are not already present. Safe modes: Config.Dry (no mutations)
+// and Config.JustFolders (folders only).
+//
+// Fatal host2 conditions (quota, closed connection) abort the run early so
+// operators are not flooded with repeated identical errors. Re-running after
+// fixing quota or network is safe because duplicates are skipped.
 package sync
 
 import (
@@ -16,16 +25,22 @@ import (
 	"go-imapsync/internal/report"
 )
 
-// Max consecutive connection failures before aborting the current folder.
+// maxConsecutiveConnFails is how many back-to-back closed-connection failures
+// are tolerated before aborting the current folder/run.
 const maxConsecutiveConnFails = 3
 
-// Runner performs a sync.
+// Runner performs a one-way sync using Cfg and optional structured Log.
 type Runner struct {
 	Cfg *config.Config
 	Log *slog.Logger
 }
 
-// Run connects both sides and syncs.
+// Run connects to both IMAP sides and syncs folders and messages according to Cfg.
+//
+// It always returns a non-nil *report.Stats (possibly partial). A non-nil error
+// means the run stopped early or a hard connection failure occurred; soft
+// per-message failures are counted in Stats.Failed without necessarily failing
+// the return value until a fatal kind is hit.
 func (r *Runner) Run(ctx context.Context) (*report.Stats, error) {
 	stats := report.New()
 	log := r.Log

@@ -124,6 +124,10 @@ openspec/            # OpenSpec design (go-imapsync-core)
 Tagged releases (`v*`) are built by GitHub Actions (linux/amd64 tarball).  
 See [CHANGELOG.md](CHANGELOG.md) and [GitHub Releases](https://github.com/jniltinho/go-imapsync/releases).
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and PR expectations.
+
 ## Status (MVP)
 
 Supported:

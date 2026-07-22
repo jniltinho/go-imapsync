@@ -1,4 +1,8 @@
 // Package imaperr classifies IMAP/network errors into operator-friendly kinds.
+//
+// Use [Classify] before logging or aborting a sync loop. Fatal kinds
+// (quota, closed connection, auth, TLS) should stop further APPEND attempts
+// and surface a clear re-run hint in the end-of-run summary.
 package imaperr
 
 import (
@@ -13,17 +17,27 @@ import (
 type Kind int
 
 const (
+	// KindUnknown is an unclassified error.
 	KindUnknown Kind = iota
+	// KindQuota is an IMAP OVERQUOTA / mailbox full rejection.
 	KindQuota
+	// KindClosed is a dead TCP/IMAP session (including EOF and reset).
 	KindClosed
+	// KindAuth is a failed LOGIN/AUTHENTICATE.
 	KindAuth
+	// KindTimeout is a network or context deadline.
 	KindTimeout
+	// KindTLS is a certificate or TLS handshake failure.
 	KindTLS
+	// KindNotFound is a missing mailbox or message.
 	KindNotFound
+	// KindServerNO is a generic IMAP NO from the server.
 	KindServerNO
+	// KindCanceled is a canceled context or interrupt.
 	KindCanceled
 )
 
+// String returns a stable machine-readable kind name for summaries.
 func (k Kind) String() string {
 	switch k {
 	case KindQuota:
@@ -55,7 +69,8 @@ type Info struct {
 	Fatal   bool   // abort folder / discourage continuing blindly
 }
 
-// Classify maps an error to Kind + friendly text.
+// Classify maps an error to Kind plus friendly Message/Hint text.
+// It never expects password material in err; callers must not wrap secrets.
 func Classify(err error) Info {
 	if err == nil {
 		return Info{}
@@ -156,7 +171,8 @@ type errString string
 
 func (e errString) Error() string { return string(e) }
 
-// Format builds a one-line operator message including side/op.
+// Format builds a one-line operator message including side and operation
+// (e.g. "host2 APPEND: destination mailbox quota exceeded").
 func Format(side, op string, err error) string {
 	if err == nil {
 		return ""
@@ -166,6 +182,7 @@ func Format(side, op string, err error) string {
 }
 
 // Detail returns the original error text trimmed for logs (secondary field).
+// Timing suffixes from some IMAP libraries are stripped for readability.
 func Detail(err error) string {
 	if err == nil {
 		return ""

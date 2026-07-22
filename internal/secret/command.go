@@ -9,8 +9,11 @@ import (
 )
 
 // FromCommand runs argv directly (no shell) and returns its stdout, with a
-// single trailing newline trimmed, as the secret. The returned error never
-// contains command output — only the command name and exit status.
+// single trailing newline trimmed, as the secret.
+//
+// The returned error never contains command stdout — only the command name and
+// exit status or context error — so failed password helpers cannot leak
+// secrets into logs.
 func FromCommand(ctx context.Context, argv []string) (String, error) {
 	if len(argv) == 0 {
 		return String{}, fmt.Errorf("password_command is empty")

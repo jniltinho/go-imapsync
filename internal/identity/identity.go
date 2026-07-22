@@ -1,5 +1,9 @@
 // Package identity builds imapsync-style message keys from headers.
-// Default fields are Message-Id and Received (not IMAP UID).
+//
+// Keys are used to decide whether a host1 message already exists on host2.
+// Unlike go-getmail's UIDVALIDITY:UID oldmail model, identity is derived from
+// message headers so re-runs remain safe across servers. Default fields are
+// Message-Id and Received (not IMAP UID). Size alone is never used as identity.
 package identity
 
 import (
@@ -11,7 +15,12 @@ import (
 
 // KeyFromHeaders builds a stable identity key from raw RFC822 headers
 // using the given header field names (case-insensitive).
-// Empty fields are skipped. If no selected field has a value, returns "".
+//
+// Multiple values for the same field (e.g. several Received lines) are included
+// in order. Whitespace is normalized. Empty fields are skipped.
+// If no selected field has a value, KeyFromHeaders returns "".
+//
+// When fields is nil or empty, Message-Id and Received are used.
 func KeyFromHeaders(rawHeaders []byte, fields []string) string {
 	if len(fields) == 0 {
 		fields = []string{"Message-Id", "Received"}
@@ -82,7 +91,9 @@ func parseLoose(raw []byte) textproto.MIMEHeader {
 	return h
 }
 
-// SplitHeadersBody splits a raw RFC822 message into headers and body.
+// SplitHeadersBody splits a raw RFC822 message into headers and body at the
+// first blank line (CRLF or LF). If no separator is found, the entire message
+// is returned as headers and body is nil.
 func SplitHeadersBody(msg []byte) (headers, body []byte) {
 	// Prefer CRLF then LF.
 	if i := bytes.Index(msg, []byte("\r\n\r\n")); i >= 0 {

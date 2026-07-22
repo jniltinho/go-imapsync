@@ -1,4 +1,7 @@
 // Package report accumulates sync counters and formats the end-of-run summary.
+//
+// Operators rely on WriteSummary for a clear success phrase or an error
+// breakdown with “what to do next” hints after classified failures.
 package report
 
 import (
@@ -10,7 +13,7 @@ import (
 	"go-imapsync/internal/imaperr"
 )
 
-// Stats holds run counters.
+// Stats holds run counters and optional abort/hint metadata for the summary.
 type Stats struct {
 	FoldersProcessed int
 	FoldersCreated   int
@@ -23,13 +26,13 @@ type Stats struct {
 
 	// ByKind counts failures by classified kind (quota, connection_closed, …).
 	ByKind map[string]int
-	// Hints collects unique operator hints (max few).
+	// Hints collects unique operator hints (capped).
 	Hints []string
 	// Aborted is set when a fatal condition stopped the run early.
 	Aborted string
 }
 
-// New starts a stats clock.
+// New starts a stats clock with empty error maps.
 func New() *Stats {
 	return &Stats{
 		Started: time.Now(),
@@ -37,13 +40,13 @@ func New() *Stats {
 	}
 }
 
-// Finish marks completion time.
+// Finish marks completion time used by duration reporting.
 func (s *Stats) Finish() { s.Finished = time.Now() }
 
-// OK reports whether the run had no hard message failures.
+// OK reports whether the run had no failures and did not abort early.
 func (s *Stats) OK() bool { return s.Failed == 0 && s.Aborted == "" }
 
-// RecordError classifies err and updates failure stats / hints.
+// RecordError records a classified failure and optional operator hint.
 func (s *Stats) RecordError(info imaperr.Info) {
 	s.Failed++
 	if s.ByKind == nil {
@@ -67,7 +70,8 @@ func (s *Stats) addHint(h string) {
 	s.Hints = append(s.Hints, h)
 }
 
-// WriteSummary writes an operator-friendly summary.
+// WriteSummary writes an operator-friendly summary to w, including error
+// breakdown and hints when the run was not fully successful.
 func (s *Stats) WriteSummary(w io.Writer) {
 	if s.Finished.IsZero() {
 		s.Finish()

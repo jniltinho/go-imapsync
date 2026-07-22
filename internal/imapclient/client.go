@@ -1,5 +1,11 @@
-// Package imapclient wraps emersion/go-imap/v2 for dual-host sync.
-// Dial/login patterns adapted from github.com/jniltinho/go-getmail.
+// Package imapclient wraps emersion/go-imap/v2 for dual-host mailbox sync.
+//
+// Dial/login patterns are adapted from github.com/jniltinho/go-getmail. Each
+// [Client] is one authenticated session (host1 or host2). Callers keep two
+// clients open for the duration of a sync run.
+//
+// Connection modes: Side.SSL uses IMAPS (implicit TLS); Side.TLS uses STARTTLS
+// after a plain dial; otherwise the session is plain (lab/insecure only).
 package imapclient
 
 import (
@@ -18,7 +24,8 @@ import (
 	"go-imapsync/internal/secret"
 )
 
-// Client is one authenticated IMAP session.
+// Client is one authenticated IMAP session bound to a single [config.Side].
+// It is not safe for concurrent use by multiple goroutines without external locking.
 type Client struct {
 	label    string
 	side     config.Side
@@ -32,7 +39,10 @@ type Client struct {
 	selected    string
 }
 
-// Options configures a new client.
+// Options configures [Dial].
+//
+// Label appears in error messages (e.g. "host1"). TLSConfig overrides system
+// roots (tests inject a custom CA). Insecure skips certificate verification.
 type Options struct {
 	Label     string
 	Side      config.Side
@@ -41,7 +51,9 @@ type Options struct {
 	TLSConfig *tls.Config // tests
 }
 
-// Dial connects and authenticates.
+// Dial connects to Side, upgrades TLS as configured, and logs in.
+// On authentication failure the underlying connection is closed and Dial
+// returns an error that does not include the password.
 func Dial(ctx context.Context, opt Options) (*Client, error) {
 	if opt.Timeout <= 0 {
 		opt.Timeout = 60 * time.Second
@@ -110,7 +122,8 @@ func (c *Client) connect(ctx context.Context) error {
 	return nil
 }
 
-// Close logs out and closes the connection.
+// Close logs out and closes the connection. It is safe to call on a nil Client
+// or after a failed Dial; Close is a no-op when no session is open.
 func (c *Client) Close() error {
 	if c == nil || c.c == nil {
 		return nil
@@ -125,10 +138,11 @@ func (c *Client) Close() error {
 	return nil
 }
 
-// Password returns the redacted secret (for logging only via LogValue).
+// Password returns the side password as a redacted [secret.String]
+// (safe for slog attributes via LogValue).
 func (c *Client) Password() secret.String { return c.side.Password }
 
-// Folder is a mailbox from LIST.
+// Folder is a mailbox entry from LIST.
 type Folder struct {
 	Name       string
 	Delimiter  rune
@@ -136,7 +150,8 @@ type Folder struct {
 	Attributes []imap.MailboxAttr
 }
 
-// ListFolders lists all mailboxes under the root.
+// ListFolders lists all mailboxes under the root ("*" pattern) and records
+// the hierarchy delimiter when the server provides one.
 func (c *Client) ListFolders(ctx context.Context) ([]Folder, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -166,7 +181,8 @@ func (c *Client) ListFolders(ctx context.Context) ([]Folder, error) {
 	return out, nil
 }
 
-// Delimiter returns the last seen hierarchy delimiter (or '/').
+// Delimiter returns the last hierarchy delimiter observed from LIST, or '/'
+// if none was recorded yet.
 func (c *Client) Delimiter() rune {
 	if c.delimiter == 0 {
 		return '/'
@@ -174,7 +190,8 @@ func (c *Client) Delimiter() rune {
 	return c.delimiter
 }
 
-// CreateFolder creates a mailbox on this server.
+// CreateFolder creates a mailbox on this server. Callers should tolerate
+// "already exists" races when multiple runs create the same path.
 func (c *Client) CreateFolder(ctx context.Context, name string) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -185,7 +202,8 @@ func (c *Client) CreateFolder(ctx context.Context, name string) error {
 	return nil
 }
 
-// Select opens a mailbox for read-write (or read-only if readOnly).
+// Select opens a mailbox (SELECT or EXAMINE when readOnly). The message count
+// from the SELECT response is stored for subsequent identity FETCHes.
 func (c *Client) Select(ctx context.Context, name string, readOnly bool) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -200,18 +218,21 @@ func (c *Client) Select(ctx context.Context, name string, readOnly bool) error {
 	return nil
 }
 
-// MessageMeta is identity material plus body for one message.
+// MessageMeta holds identity material and optional full body for one message.
 type MessageMeta struct {
 	UID          imap.UID
 	Flags        []imap.Flag
 	InternalDate time.Time
 	Headers      []byte
-	Body         []byte // full RFC822 when fetched
+	Body         []byte // full RFC822 when fetched with FetchFull
 	Size         int64
 }
 
-// FetchAllForIdentity loads UID, flags, date, and header fields for every
-// message in the selected mailbox (for building identity sets).
+// FetchAllForIdentity loads UID, flags, internal date, size, and selected
+// header fields for every message in the selected mailbox. Use the result to
+// build identity key sets without downloading full bodies.
+//
+// An empty mailbox returns (nil, nil).
 func (c *Client) FetchAllForIdentity(ctx context.Context, headerFields []string) ([]MessageMeta, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -256,7 +277,8 @@ func (c *Client) FetchAllForIdentity(ctx context.Context, headerFields []string)
 	return out, nil
 }
 
-// FetchFull retrieves full RFC822 for one UID in the selected mailbox.
+// FetchFull retrieves the full RFC822 body, flags, and internal date for one
+// UID in the currently selected mailbox.
 func (c *Client) FetchFull(ctx context.Context, uid imap.UID) (*MessageMeta, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -304,7 +326,9 @@ func (c *Client) FetchFull(ctx context.Context, uid imap.UID) (*MessageMeta, err
 	return m, nil
 }
 
-// Append uploads a message to mailbox with flags and internal date.
+// Append uploads a message to mailbox with the given system flags and
+// internal date. The server may reject APPEND with OVERQUOTA or other NO
+// responses; callers should classify those errors for the operator.
 func (c *Client) Append(ctx context.Context, mailbox string, body []byte, flags []imap.Flag, date time.Time) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -324,7 +348,7 @@ func (c *Client) Append(ctx context.Context, mailbox string, body []byte, flags 
 	return nil
 }
 
-// FolderExists reports whether name is present in LIST results (caller may pass cache).
+// FolderExists reports whether name is present in a cached LIST result slice.
 func FolderExists(folders []Folder, name string) bool {
 	for _, f := range folders {
 		if f.Name == name {

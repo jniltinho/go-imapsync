@@ -1,4 +1,7 @@
-// Package cmd holds the Cobra command tree.
+// Package cmd holds the Cobra command tree for the go-imapsync CLI.
+//
+// Execute is the process entry used by main. Exit codes: 0 success, 1 runtime
+// failure (auth, IMAP errors, partial fatal abort), 2 usage/config validation.
 package cmd
 
 import (
@@ -97,7 +100,8 @@ func init() {
 	rootCmd.SetVersionTemplate("go-imapsync {{.Version}}\n")
 }
 
-// Execute runs the CLI and exits the process with the proper exit code.
+// Execute runs the CLI, handles SIGINT/SIGTERM, and exits the process with
+// code 0 (OK), 1 (runtime), or 2 (usage/config). It does not return.
 func Execute() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

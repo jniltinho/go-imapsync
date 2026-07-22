@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 —
 
+## [0.1.1] — 2026-07-22
+
+**Clearer operator errors and fuller package godoc.**
+
+### Added
+
+- `internal/imaperr`: classify quota, closed connection, auth, TLS, timeout, and related IMAP failures with hints
+- End-of-run summary error breakdown and “what to do next” hints
+- CONTRIBUTING.md and expanded godoc on packages and exported APIs
+
+### Changed
+
+- Abort folder/run on OVERQUOTA or repeated closed-connection APPEND failures instead of spamming identical errors
+- Release notes style aligned with go-postfixadmin (emoji sections + Full Changelog)
+
 ## [0.1.0] — 2026-07-22
 
 **First public MVP:** one-way IMAP mailbox sync (host1 → host2) as a static Go binary.
