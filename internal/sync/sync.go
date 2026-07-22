@@ -206,8 +206,12 @@ func (r *Runner) syncFolder(
 		r.logOpError(log, stats, "host1", "SELECT", srcName, 0, err)
 		return err
 	}
-	if !r.Cfg.Dry {
-		if err := dst.Select(ctx, dstName, true); err != nil {
+	// SELECT host2 even in --dry so identity compare can report accurate skips.
+	if err := dst.Select(ctx, dstName, true); err != nil {
+		if r.Cfg.Dry {
+			// Folder missing on host2: dry-run treats all host1 messages as pending.
+			log.Info("host2 folder missing (dry)", "folder", dstName, "detail", imaperr.Detail(err))
+		} else {
 			_ = dst.CreateFolder(ctx, dstName)
 			if err2 := dst.Select(ctx, dstName, true); err2 != nil {
 				r.logOpError(log, stats, "host2", "SELECT", dstName, 0, err2)
@@ -226,18 +230,18 @@ func (r *Runner) syncFolder(
 		return nil
 	}
 
+	// Always build host2 identity set (including --dry) so dry-run reports
+	// accurate remaining vs skipped counts after a real sync.
 	dstKeys := make(map[string]struct{})
-	if !r.Cfg.Dry {
-		dstMsgs, err := dst.FetchAllForIdentity(ctx, fields)
-		if err != nil {
-			r.logOpError(log, stats, "host2", "FETCH headers", dstName, 0, err)
-			return err
-		}
-		for _, m := range dstMsgs {
-			k := identity.KeyFromHeaders(m.Headers, fields)
-			if k != "" {
-				dstKeys[k] = struct{}{}
-			}
+	dstMsgs, err := dst.FetchAllForIdentity(ctx, fields)
+	if err != nil {
+		r.logOpError(log, stats, "host2", "FETCH headers", dstName, 0, err)
+		return err
+	}
+	for _, m := range dstMsgs {
+		k := identity.KeyFromHeaders(m.Headers, fields)
+		if k != "" {
+			dstKeys[k] = struct{}{}
 		}
 	}
 
