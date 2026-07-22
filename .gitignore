@@ -2,8 +2,9 @@
 /dist/
 /go-imapsync
 
-# Reference clones (not part of this repo)
+# Reference clones (local only — never commit or push)
 /base/
+base/
 
 # Local env / secrets
 .env
