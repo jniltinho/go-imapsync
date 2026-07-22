@@ -39,6 +39,8 @@ go-imapsync version
 go-imapsync --help
 ```
 
+**Good practices** (quota, staged runs, secrets, resume): see [docs/GOOD_PRACTICES.md](docs/GOOD_PRACTICES.md).
+
 Passwords may also come from the environment (never logged):
 
 - `GOIMAPSYNC_PASSWORD1`

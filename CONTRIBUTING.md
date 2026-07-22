@@ -33,9 +33,10 @@ Do not commit secrets, `.env`, or `docs/prints/`.
 
 ## Code style
 
-- Follow Go conventions and the project golang skills under `.agents/skills/` (naming, error handling, godoc).
+- Follow Go conventions and the project golang skills under `.agents/skills/` (naming, error handling, godoc, testing).
 - Exported identifiers need godoc comments starting with the name.
 - Prefer clear errors classified via `internal/imaperr` when talking to IMAP.
+- Operator and developer conventions are summarized in [docs/GOOD_PRACTICES.md](docs/GOOD_PRACTICES.md).
 
 ## Pull requests
 
