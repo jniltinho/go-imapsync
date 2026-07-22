@@ -14,13 +14,26 @@ as a single static binary with no runtime dependencies.
 ## Install / Build
 
 ```bash
-make build            # static binary dist/go-imapsync
-make release          # build + compress with upx (optional, if installed)
+make build            # host-native static binary dist/go-imapsync
+make release          # native binary + optional upx
+make release-cross    # linux/amd64, darwin/arm64, windows/amd64 archives in dist/
 make test             # go test -race ./...
 make lint             # gofmt + go vet + staticcheck
 ```
 
 Requires Go 1.26+.
+
+### Pre-built binaries
+
+GitHub Releases ship:
+
+| Platform | Archive |
+|----------|---------|
+| Linux x86_64 | `go-imapsync_<ver>_linux_amd64.tar.gz` |
+| macOS Apple Silicon | `go-imapsync_<ver>_darwin_arm64.tar.gz` |
+| Windows x86_64 | `go-imapsync_<ver>_windows_amd64.zip` |
+
+See [Releases](https://github.com/jniltinho/go-imapsync/releases).
 
 ## Usage
 

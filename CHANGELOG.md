@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+—
+
+## [0.1.2] — 2026-07-22
+
+**Multi-platform release packages and operator good practices.**
+
 ### Added
 
+- Cross-build `make release-cross`: **linux/amd64**, **darwin/arm64** (Apple Silicon), **windows/amd64**
+- GitHub Actions release uploads all three archives
 - docs: `docs/GOOD_PRACTICES.md` (operator staged runs, quota, secrets; developer Go conventions)
 
 ## [0.1.1] — 2026-07-22

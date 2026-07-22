@@ -26,24 +26,20 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y upx
+          sudo apt-get install -y upx zip
 
       - name: Run Tests
         run: make test
 
-      - name: Build Application
-        run: make release VERSION=${GITHUB_REF#refs/tags/}
-
-      - name: Package Binary
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          ARCHIVE_NAME="go-imapsync_${VERSION}_linux_amd64.tar.gz"
-          tar -czvf "$ARCHIVE_NAME" -C dist go-imapsync -C .. LICENSE README.md CHANGELOG.md examples/ docs/architecture/
-          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+      - name: Build multi-platform packages
+        run: make release-cross VERSION=${GITHUB_REF#refs/tags/}
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ARCHIVE_NAME }}
+          files: |
+            dist/go-imapsync_*_linux_amd64.tar.gz
+            dist/go-imapsync_*_darwin_arm64.tar.gz
+            dist/go-imapsync_*_windows_amd64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
