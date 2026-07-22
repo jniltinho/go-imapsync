@@ -38,7 +38,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           ARCHIVE_NAME="go-imapsync_${VERSION}_linux_amd64.tar.gz"
-          tar -czvf "$ARCHIVE_NAME" -C dist go-imapsync -C .. LICENSE README.md examples/
+          tar -czvf "$ARCHIVE_NAME" -C dist go-imapsync -C .. LICENSE README.md CHANGELOG.md examples/ docs/architecture/
           echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
 
       - name: Create Release

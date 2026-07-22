@@ -119,6 +119,11 @@ examples/            # sample invocations
 openspec/            # OpenSpec design (go-imapsync-core)
 ```
 
+## Releases
+
+Tagged releases (`v*`) are built by GitHub Actions (linux/amd64 tarball).  
+See [CHANGELOG.md](CHANGELOG.md) and [GitHub Releases](https://github.com/jniltinho/go-imapsync/releases).
+
 ## Status (MVP)
 
 Supported:
