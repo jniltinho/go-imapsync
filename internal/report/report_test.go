@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"go-imapsync/internal/imaperr"
 )
 
 func TestWriteSummaryOK(t *testing.T) {
@@ -24,10 +26,23 @@ func TestWriteSummaryOK(t *testing.T) {
 
 func TestWriteSummaryErrors(t *testing.T) {
 	s := New()
-	s.Failed = 1
+	s.RecordError(imaperr.Info{
+		Kind:    imaperr.KindQuota,
+		Message: "quota exceeded",
+		Hint:    "free space or raise quota, then re-run",
+		Fatal:   true,
+	})
+	s.Aborted = "host2 mailbox quota exceeded"
 	var buf bytes.Buffer
 	s.WriteSummary(&buf)
-	if !strings.Contains(buf.String(), "1 error") {
-		t.Fatalf("output: %s", buf.String())
+	out := buf.String()
+	if !strings.Contains(out, "1 error") {
+		t.Fatalf("output: %s", out)
+	}
+	if !strings.Contains(out, "quota") {
+		t.Fatalf("expected breakdown: %s", out)
+	}
+	if !strings.Contains(out, "What to do next") {
+		t.Fatalf("expected hints: %s", out)
 	}
 }
