@@ -76,13 +76,13 @@ docker run --rm go-imapsync:dev version
 
 ## Live test (opt-in)
 
-Against a real server (e.g. `mail.linuxpro.com.br`), credentials only at runtime:
+Against real IMAP servers, credentials only at runtime:
 
 ```bash
-export GOIMAPSYNC_HOST1=mail.linuxpro.com.br
+export GOIMAPSYNC_HOST1=mail.orig-domain.com
 export GOIMAPSYNC_USER1=...
 export GOIMAPSYNC_PASSWORD1=...
-export GOIMAPSYNC_HOST2=mail.linuxpro.com.br
+export GOIMAPSYNC_HOST2=mail.dest-domain.com
 export GOIMAPSYNC_USER2=...
 export GOIMAPSYNC_PASSWORD2=...
 make live-dry

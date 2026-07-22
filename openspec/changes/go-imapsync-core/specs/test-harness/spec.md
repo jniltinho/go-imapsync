@@ -21,15 +21,15 @@ The project SHALL provide a Vagrant-based environment targeting Ubuntu 24.04 (or
 - **WHEN** an operator runs `vagrant up` (with provider available) and the documented test command inside the VM
 - **THEN** the offline tests pass inside the guest
 
-### Requirement: Live IMAP test against mail.linuxpro.com.br
-The project SHALL document how to run a live dry-run and optional real sync against `mail.linuxpro.com.br` using credentials supplied only at runtime (environment variables or flags). Live tests MUST be opt-in and MUST NOT run in the default `go test ./...` suite.
+### Requirement: Live IMAP test against example domains
+The project SHALL document how to run a live dry-run and optional real sync against operator-supplied IMAP hosts (documented examples: `mail.orig-domain.com` and `mail.dest-domain.com`) using credentials supplied only at runtime (environment variables or flags). Live tests MUST be opt-in and MUST NOT run in the default `go test ./...` suite.
 
 #### Scenario: Live dry-run gated
 - **WHEN** live credentials are not set
-- **THEN** default CI/unit tests do not attempt to connect to mail.linuxpro.com.br
+- **THEN** default CI/unit tests do not attempt to connect to external IMAP hosts
 
 #### Scenario: Live dry-run with credentials
-- **WHEN** the operator sets the documented credential environment variables and runs the documented live dry-run command against mail.linuxpro.com.br
+- **WHEN** the operator sets the documented credential environment variables and runs the documented live dry-run command against the configured source and destination hosts
 - **THEN** the tool connects, authenticates, and completes a `--dry` pass without appending messages
 
 ### Requirement: Secrets hygiene in harness

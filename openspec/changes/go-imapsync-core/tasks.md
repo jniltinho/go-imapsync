@@ -57,13 +57,13 @@
 - [ ] 8.2 Document `docker build` / run examples with env-passed credentials only
 - [ ] 8.3 Add `deploy/vagrant/Vagrantfile` for Ubuntu 24.04: provision Go (or use host binary), run `go test ./...`
 - [ ] 8.4 Add `.env.example` with placeholders for live IMAP (host, users, passwords)
-- [ ] 8.5 Document live dry-run against `mail.linuxpro.com.br` (opt-in env gate; not default tests)
+- [ ] 8.5 Document live dry-run against `mail.orig-domain.com` → `mail.dest-domain.com` (opt-in env gate; not default tests)
 - [ ] 8.6 Verify default `go test ./...` never contacts external IMAP hosts
 
 ## 9. Live validation (operator credentials later)
 
 - [ ] 9.1 Script or Make target `live-dry` that reads env and runs `--dry --justfolders` then `--dry` full
-- [ ] 9.2 When credentials for `mail.linuxpro.com.br` are provided: run dry-run, then controlled real sync between agreed mailboxes
+- [ ] 9.2 When credentials for live hosts are provided: run dry-run, then controlled real sync between agreed mailboxes
 - [ ] 9.3 Compare behavior notes with Perl `base/imapsync` on the same accounts (folder list, duplicate skip)
 - [ ] 9.4 Record results and known server quirks in a short `docs/live-test.md` (no secrets)
 

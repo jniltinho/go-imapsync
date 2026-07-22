@@ -9,7 +9,7 @@ Application code at repo root is greenfield. Two read-only bases under `base/`:
 
 Operators need a Go binary that performs one-way IMAP mailbox sync (host1 → host2) with imapsync-like CLI and safe defaults.
 
-Primary validation path: build and run on the host, in Docker, and/or in a Vagrant Ubuntu 24.04 VM; optional live IMAP against `mail.linuxpro.com.br` with credentials supplied at runtime (not stored in the repo).
+Primary validation path: build and run on the host, in Docker, and/or in a Vagrant Ubuntu 24.04 VM; optional live IMAP against `mail.orig-domain.com` → `mail.dest-domain.com` with credentials supplied at runtime (not stored in the repo).
 
 Reference principles (`base/imapsync/FAQ.d/FAQ.Principles.txt`): no config file, stateless, rsync-like, reliable, robust, safe defaults.
 
@@ -93,7 +93,7 @@ base/go-getmail/        # read-only Go reference (clone of github.com/jniltinho/
 
 **Extend beyond go-getmail:** LIST (all folders), CREATE, APPEND (with flags + date), FETCH headers for identity building, optional STORE flags if needed, reconnect/re-SELECT for long syncs.
 
-**Rationale:** Already battle-tested in go-getmail for mail.linuxpro-style IMAPS; avoids library thrash.
+**Rationale:** Already battle-tested in go-getmail for typical IMAPS deployments; avoids library thrash.
 
 **Alternatives:**
 
@@ -138,7 +138,7 @@ base/go-getmail/        # read-only Go reference (clone of github.com/jniltinho/
 | Fake IMAP | interface + mock client for sync loop |
 | Integration (local) | Docker Compose with two Dovecot instances (optional) or single Dovecot + copy to second mailbox |
 | Host integration | Vagrant Ubuntu 24.04 builds binary, runs unit tests |
-| Live | Manual/CI optional: `--host1/--host2 mail.linuxpro.com.br` with operator credentials |
+| Live | Manual/CI optional: `--host1 mail.orig-domain.com` / `--host2 mail.dest-domain.com` with operator credentials |
 
 **Docker:** Multi-stage Dockerfile builds static binary; optional compose for self-contained smoke.
 
@@ -174,7 +174,7 @@ N/A for end users (new tool). For developers:
 
 1. Implement modules per `tasks.md`.
 2. Validate with `go test`, Docker build, optional Vagrant.
-3. Operator dry-run against `mail.linuxpro.com.br` when credentials available.
+3. Operator dry-run against `mail.orig-domain.com` → `mail.dest-domain.com` when credentials available.
 4. Iterate; archive this change when core scenarios pass; open follow-up changes for parity phases.
 
 Rollback: delete binary / revert commits; no server-side schema to roll back (stateless).
@@ -182,7 +182,7 @@ Rollback: delete binary / revert commits; no server-side schema to roll back (st
 ## Open Questions
 
 1. **Exact binary name:** `go-imapsync` vs `imapsync` (recommend `go-imapsync`, parallel to `go-getmail`).
-2. **Live test accounts:** same server both sides (two mailboxes) vs host1 external → host2 linuxpro — operator will provide credentials later.
+2. **Live test accounts:** same server both sides (two mailboxes) vs host1 `mail.orig-domain.com` → host2 `mail.dest-domain.com` — operator will provide credentials later.
 3. **Whether Docker Compose Dovecot is mandatory in MVP** or only Vagrant + live — recommend at least one automated IMAP path (mock or Dovecot) before relying solely on live.
 4. **License:** recommend **MIT** like go-getmail (from-scratch Go; do not copy non-free UI assets from `base/imapsync`).
 5. **How tightly to keep base/go-getmail updated:** shallow clone / submodule / manual refresh — for now a read-only checkout under `base/go-getmail` is enough.

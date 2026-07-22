@@ -28,7 +28,7 @@ context: |
   - IMAP: emersion/go-imap/v2 + go-message + go-sasl
   - slog; unit + integration tests
   - Test environments: Docker and/or Vagrant Ubuntu 24.04
-  - Live IMAP: mail.linuxpro.com.br (credentials at test time only)
+  - Live IMAP: mail.orig-domain.com → mail.dest-domain.com (credentials at test time only)
 
   References under base/:
   - base/imapsync/ — Perl behavior, FAQ, flags, examples
@@ -46,7 +46,7 @@ rules:
     - Include Non-goals
     - Scope an MVP core plus clear later phases (parity is multi-release)
     - Mention go-getmail as Go base and imapsync as behavior reference
-    - Mention test plan: unit, Docker/Vagrant, live mail.linuxpro.com.br
+    - Mention test plan: unit, Docker/Vagrant, live mail.orig-domain.com / mail.dest-domain.com
   design:
     - Package layout under cmd/ and internal/ (mirror go-getmail style)
     - Explicitly map which go-getmail packages to adapt vs rewrite

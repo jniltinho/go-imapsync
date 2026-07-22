@@ -11,7 +11,7 @@ We already have a solid Go mail client foundation in [jniltinho/go-getmail](http
 - Implement core imapsync-compatible flags for credentials, TLS/SSL, folder listing/selection, dry-run, just-folders, message transfer with flags and internal dates, and **Message-Id/Received-based** duplicate detection (imapsync model — **not** go-getmail’s local `UIDVALIDITY:UID` oldmail state).
 - Add dual-session IMAP work that go-getmail does not have: LIST hierarchy, CREATE folders on host2, APPEND with flags/dates, host2 identity set per folder.
 - Add structured logging, exit codes, and summary stats comparable to imapsync’s “sync looks good” reporting.
-- Provide test harnesses: unit tests, optional Docker image, and optional Vagrant Ubuntu 24.04 VM; live tests against `mail.linuxpro.com.br` using operator-supplied credentials (never committed).
+- Provide test harnesses: unit tests, optional Docker image, and optional Vagrant Ubuntu 24.04 VM; live tests against `mail.orig-domain.com` → `mail.dest-domain.com` using operator-supplied credentials (never committed).
 - Keep `base/imapsync` and `base/go-getmail` as **read-only** references; do not modify those trees as part of product features.
 
 ## Capabilities
@@ -23,7 +23,7 @@ We already have a solid Go mail client foundation in [jniltinho/go-getmail](http
 - `folder-sync`: Recursive folder hierarchy transfer, optional folder filters/mapping hooks for later parity, skip empty folders, INBOX safety.
 - `message-sync`: Incremental message copy with identity by headers (default Message-Id + Received), preserve flags and dates, skip already-present messages, transfer progress and totals.
 - `sync-report`: End-of-run summary (counts, sizes, errors, exit status) and optional logfile, aligned with imapsync operator expectations.
-- `test-harness`: Docker and/or Vagrant Ubuntu 24.04 environments plus documented live test against `mail.linuxpro.com.br` (credentials via env/flags at runtime).
+- `test-harness`: Docker and/or Vagrant Ubuntu 24.04 environments plus documented live test against `mail.orig-domain.com` / `mail.dest-domain.com` (credentials via env/flags at runtime).
 
 ### Modified Capabilities
 
@@ -34,5 +34,5 @@ We already have a solid Go mail client foundation in [jniltinho/go-getmail](http
 - **Codebase**: New Go module at repo root (`go.mod`, `cmd/`, `internal/`, tests). References: `base/imapsync` (behavior), `base/go-getmail` (Go patterns). Product code is new/adapted under repo root, not a submodule runtime link to go-getmail.
 - **Dependencies**: Align with go-getmail where useful — `emersion/go-imap/v2`, `emersion/go-message`, `spf13/cobra`, `log/slog`; pin via `go.mod`. No POP3/Maildir/TOML requirement for MVP.
 - **Ops/test**: Docker image and/or Vagrantfile for Ubuntu 24.04; integration tests require network access to IMAP servers; secrets only via env or CLI at test time (reuse redaction approach from go-getmail `internal/secret`).
-- **Users**: Operators migrating or backing up mailboxes (including LinuxPro / `mail.linuxpro.com.br`) get a single static binary with familiar imapsync-style flags for the core path.
+- **Users**: Operators migrating or backing up mailboxes get a single static binary with familiar imapsync-style flags for the core path.
 - **Non-goals (this change)**: Full imapsync option parity (XOAUTH2, Gmail labels, admin proxyauth, mass CSV UI, two-way sync, `--delete1`/`--delete2` as default path). Not a getmail replacement (no Maildir/POP3/oldmail). Those are later phases or other projects.
