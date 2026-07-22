@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 —
 
+## [0.1.3] — 2026-07-22
+
+**Accurate `--dry` remaining counts after a real sync.**
+
+### Fixed
+
+- fix(sync): build host2 identity keys during `--dry` (SELECT + FETCH headers) so skipped vs pending counts match reality after a completed transfer
+
 ## [0.1.2] — 2026-07-22
 
 **Multi-platform release packages and operator good practices.**
